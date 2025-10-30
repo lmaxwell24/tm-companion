@@ -1,54 +1,37 @@
-import { Client, FieldsetQueueSkillsType, MatchRound, FieldsetAudienceDisplay } from "vex-tm-client";
-import { config } from 'dotenv-safe';
+import {config} from 'dotenv-safe';
+import {
+  Client,
+  FieldsetAudienceDisplay,
+  FieldsetQueueSkillsType,
+  MatchRound
+} from "vex-tm-client";
+
 config();
 
+const sendCompanionEvent =
+    async (loc: string) => {
+  console.log(loc)
+  let sendLocation = `${process.env.COMPANION_ADDR}/api/location/${loc}/press`;
+  console.log(sendLocation);
+  await fetch(sendLocation,
+              {method : "POST"});
+}
+
 const client = new Client({
-  address: process.env.TM_HOST_ADDR,
-  authorization: {
-    client_id: process.env.API_CLIENT_ID,
-    client_secret: process.env.API_CLIENT_SECRET,
-    grant_type: "client_credentials",
-    expiration_date: process.env.API_EXPIRATION_DATE,
+  address : process.env.TM_HOST_ADDR,
+  authorization : {
+    client_id : process.env.API_CLIENT_ID,
+    client_secret : process.env.API_CLIENT_SECRET,
+    grant_type : "client_credentials",
+    expiration_date : process.env.API_EXPIRATION_DATE,
   },
-  clientAPIKey: process.env.API_CLIENT_API_KEY
+  clientAPIKey : process.env.API_CLIENT_API_KEY
 });
 
 const result = await client.connect();
 if (!result.success) {
   console.error("Could not connect to TM instance", result);
 }
-
-const divisions = await client.getDivisions();
-if (!divisions.success) {
-  console.error("divisions", divisions);
-}
-
-console.log(divisions);
-
-const division = divisions.data[0];
-
-const teams = await division.getTeams();
-if (!teams.success) {
-  console.error("teams", teams);
-}
-
-console.log(teams);
-
-const matches = await division.getMatches();
-if (!matches.success) {
-  console.error("matches", matches);
-}
-
-for (const match of matches.data) {
-  console.log(match);
-}
-
-const rankings = await division.getRankings(MatchRound.Qualification);
-if (!rankings.success) {
-  console.error("rankings", rankings);
-}
-
-console.log(rankings);
 
 const fieldsets = await client.getFieldsets();
 if (!fieldsets.success) {
@@ -70,22 +53,28 @@ if (!connection.success) {
   console.error("connection", connection);
 }
 
-fieldset.on("matchStarted", (event) => console.log(event));
-fieldset.on("matchStopped", (event) => console.log(event));
-fieldset.on("fieldActivated", (event) =>
-  console.log(event)
-);
-fieldset.on("fieldMatchAssigned", (event) =>
-  console.log(event)
-);
-fieldset.on("audienceDisplayChanged", (event) =>
-  console.log(event)
-);
+fieldset.on("matchStarted", async (event) => {
+  console.log(event);
+  await sendCompanionEvent(process.env.COMPANION_MATCH_START_LOC)
+});
+fieldset.on("matchStopped", async (event) => {
+  console.log(event);
+  await sendCompanionEvent(process.env.COMPANION_MATCH_END_LOC)
+});
+fieldset.on("fieldActivated", async (event) => {
+  console.log(event);
+  await sendCompanionEvent(process.env.COMPANION_FIELD_ACTIVATION_LOC)
+});
+fieldset.on("fieldMatchAssigned", async (event) => console.log(event));
+fieldset.on("audienceDisplayChanged", async (event) => {
+  console.log(event);
+  if (event.display === "IN_MATCH") {
+    await sendCompanionEvent(process.env.COMPANION_IN_MATCH_LOC);
+  }
+});
 
 // fieldset.on("matchStopped", async (event) => {
 //   await fieldset.setAudienceDisplay(FieldsetAudienceDisplay.SkillsRankings);
 // });
 
-process.on("exit", () => {
-  fieldset.disconnect();
-});
+process.on("exit", () => { fieldset.disconnect(); });
