@@ -13,8 +13,7 @@ const sendCompanionEvent =
   console.log(loc)
   let sendLocation = `${process.env.COMPANION_ADDR}/api/location/${loc}/press`;
   console.log(sendLocation);
-  await fetch(sendLocation,
-              {method : "POST"});
+  await fetch(sendLocation, {method : "POST"});
 }
 
 const client = new Client({
@@ -64,7 +63,17 @@ fieldset.on("matchStopped", async (event) => {
 fieldset.on("fieldActivated", async (event) => {
   console.log(event);
   await sendCompanionEvent(process.env.COMPANION_FIELD_ACTIVATION_LOC)
+  if (event.fieldID == 1) {
+    await sendCompanionEvent(process.env.COMPANION_FIELD_1_LOC)
+  }
+  else if (event.fieldID == 2) {
+    await sendCompanionEvent(process.env.COMPANION_FIELD_2_LOC)
+  }
+  else if (event.fieldID == 3) {
+    await sendCompanionEvent(process.env.COMPANION_FIELD_3_LOC)
+  }
 });
+
 fieldset.on("fieldMatchAssigned", async (event) => console.log(event));
 fieldset.on("audienceDisplayChanged", async (event) => {
   console.log(event);
@@ -72,9 +81,5 @@ fieldset.on("audienceDisplayChanged", async (event) => {
     await sendCompanionEvent(process.env.COMPANION_IN_MATCH_LOC);
   }
 });
-
-// fieldset.on("matchStopped", async (event) => {
-//   await fieldset.setAudienceDisplay(FieldsetAudienceDisplay.SkillsRankings);
-// });
 
 process.on("exit", () => { fieldset.disconnect(); });
