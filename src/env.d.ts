@@ -11,6 +11,12 @@ declare global {
       COMPANION_MATCH_END_LOC: string;
       COMPANION_IN_MATCH_LOC: string;
       COMPANION_FIELD_ACTIVATION_LOC: string;
+      COMPANION_FIELD_1_LOC: string;
+      COMPANION_FIELD_2_LOC: string;
+      COMPANION_FIELD_3_LOC: string;
+      COMPANION_RED_WIN: string;
+      COMPANION_BLUE_WIN: string;
+      COMPANION_TIE_WIN: string;
     }
   }
 }
