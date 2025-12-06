@@ -17,6 +17,8 @@ declare global {
       COMPANION_RED_WIN: string;
       COMPANION_BLUE_WIN: string;
       COMPANION_TIE_WIN: string;
+      TM_PY_ENABLE: string;
+      TM_PY_ADDR: string;
     }
   }
 }

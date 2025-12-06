@@ -15,6 +15,14 @@ const sendCompanionEvent =
   console.log(sendLocation);
   await fetch(sendLocation, {method : "POST"});
 }
+const getCurrentSavedMatch = async () => {
+  let res = await fetch(`${process.env.TM_PY_ADDR}`)
+  const data = await res.json();
+  console.log(`Current Saved: ${data}`)
+  return data
+}
+console.log("CURRENT SAVED MATCH:")
+console.log(await getCurrentSavedMatch())
 
 const client = new Client({
   address : process.env.TM_HOST_ADDR,
@@ -59,9 +67,12 @@ fieldset.on("matchStarted", async (event) => {
   console.log(event);
   await sendCompanionEvent(process.env.COMPANION_MATCH_START_LOC)
 });
+let last_saved = 0
+let current_saved = 0
 fieldset.on("matchStopped", async (event) => {
   console.log(event);
   await sendCompanionEvent(process.env.COMPANION_MATCH_END_LOC)
+  // current_saved = await getCurrentSavedMatch()
 });
 const field_map = {
   1 : process.env.COMPANION_FIELD_1_LOC,
@@ -76,6 +87,7 @@ fieldset.on("fieldActivated", async (event) => {
   await sendCompanionEvent(process.env.COMPANION_FIELD_ACTIVATION_LOC)
   current_field = event.fieldID;
   await sendCompanionEvent(field_map[event.fieldID])
+  current_saved = await getCurrentSavedMatch()
   // if (event.fieldID == 1) {
   //   await sendCompanionEvent(process.env.COMPANION_FIELD_1_LOC)
   // }
@@ -96,18 +108,23 @@ fieldset.on("audienceDisplayChanged", async (event) => {
   if (event.display === "IN_MATCH") {
     await sendCompanionEvent(process.env.COMPANION_IN_MATCH_LOC);
   } else if (event.display === "INTRO") {
-    await sendCompanionEvent(field_map[event.fieldID])
+    await sendCompanionEvent(field_map[current_field])
   } else if (event.display === "RESULTS") {
     let results = await division.getMatches();
-    console.log(results)
-    for (const result of results.data) {
-      console.log(result)
-    }
     console.log(current_match)
+    if(last_saved == current_saved){
+      console.log("Match already processed, updating info")
+      current_saved = await getCurrentSavedMatch()
+    }
     let current_match_data =results.data.filter(
         (a) => a.matchInfo.matchTuple.round == current_match.round &&
-               a.matchInfo.matchTuple.match == current_match.match)[0]
+               a.matchInfo.matchTuple.match == current_saved)[0]
     console.log(current_match_data)
+    last_saved = current_saved
+    if(!current_match_data){
+      console.log("No match data found")
+      return
+    }
     let winner = current_match_data.winningAlliance
     console.log(winner)
     if(winner == 1){
